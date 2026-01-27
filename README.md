@@ -1,23 +1,45 @@
 
 # Email Scheduler Service
 
-A production-grade email scheduling system built with TypeScript, BullMQ, Redis, PostgreSQL, and React.
+A production-grade email scheduling system built using TypeScript, BullMQ, Redis, PostgreSQL, and React.
 
-This project demonstrates how real-world email systems schedule, throttle, and send emails reliably without cron jobs.
+This project demonstrates how real-world email systems schedule, throttle, and send emails reliably without cron jobs, while ensuring persistence, rate limiting, and fault tolerance.
 
 ---
 
 ## Features
 
 - Schedule emails for a specific future time
-- Persistent job scheduling using BullMQ + Redis (no cron)
-- Rate limiting (emails per hour)
-- Delay between individual email sends
-- Automatic rescheduling when limits are exceeded
+- Persistent background job scheduling using BullMQ + Redis
+- Rate limiting (maximum emails per hour)
+- Controlled delay between individual email sends
+- Automatic rescheduling when rate limits are exceeded
 - Google OAuth authentication
 - Dashboard to view scheduled and sent emails
 - CSV upload for bulk email scheduling
-- Survives server restarts without losing jobs
+- Reliable processing across server restarts
+
+---
+
+## Feature Breakdown
+
+### Backend
+- Email scheduling using BullMQ delayed jobs
+- Persistent job storage using Redis (no cron jobs)
+- PostgreSQL persistence for email state and metadata
+- Rate limiting (max emails per hour)
+- Controlled concurrency and delay between email sends
+- Automatic rescheduling when limits are exceeded
+- Background worker for reliable email processing
+- Safe handling of restarts without duplicate emails
+
+### Frontend
+- Google OAuth login
+- User dashboard
+- Compose email interface
+- CSV upload for bulk scheduling
+- Scheduled emails table
+- Sent emails table
 
 ---
 
@@ -26,12 +48,12 @@ This project demonstrates how real-world email systems schedule, throttle, and s
 ### Backend
 - TypeScript
 - Node.js + Express
-- BullMQ (Redis-backed queue)
+- BullMQ (Redis-backed job queue)
 - Redis
 - PostgreSQL
 - Prisma ORM
-- Nodemailer (Ethereal SMTP)
-- Google OAuth + JWT
+- Nodemailer
+- Google OAuth + JWT authentication
 
 ### Frontend
 - React + Vite
@@ -42,88 +64,70 @@ This project demonstrates how real-world email systems schedule, throttle, and s
 
 ## Architecture Overview
 
-Client (React)
-|
-| REST API (JWT Auth)
-v
-Express Backend
-|
-| DB writes (Email metadata)
-v
-PostgreSQL
-|
-| Job scheduling
-v
-BullMQ Queue (Redis)
-|
-| Worker processes
-v
-Email Worker → Ethereal SMTP
+Client (React)  
+→ REST API (JWT Auth)  
+→ Express Backend  
+→ PostgreSQL (email metadata & state)  
+→ BullMQ Queue (Redis)  
+→ Worker  
+→ SMTP (Ethereal Email)
 
 ---
 
 ## Email Scheduling Flow
 
-1. User logs in via Google OAuth
-2. User uploads CSV and schedules emails
-3. Backend:
-   - Saves email records in PostgreSQL
-   - Adds delayed jobs to BullMQ
-4. Worker:
-   - Picks jobs at scheduled time
-   - Enforces rate limits and delays
-   - Sends email via SMTP
-   - Updates status in DB
+1. User logs in using Google OAuth
+2. User schedules emails (single or via CSV upload)
+3. Backend stores email metadata in PostgreSQL
+4. Backend schedules delayed jobs in BullMQ
+5. Worker executes jobs at scheduled time
+6. Rate limits and delays are enforced
+7. Emails are sent via SMTP
+8. Email status is updated in the database
 
 ---
 
-## Screenshots
+## Rate Limiting & Concurrency
 
-### Login (Google OAuth)
-![Login](screenshots/login.png)
-
-### Dashboard
-![Dashboard](screenshots/dashboard.png)
-
-### Schedule Email
-![Schedule Email](screenshots/schedule-email.png)
-
-### Scheduled Emails
-![Scheduled Emails](screenshots/scheduled-list.png)
-
-### Sent Emails
-![Sent Emails](screenshots/sent-emails.png)
-
-
-## Rate Limiting Logic
-
-- Configurable via environment variables:
-
-MAX_EMAILS_PER_HOUR  
-MIN_DELAY_BETWEEN_EMAILS_MS
-
-- Redis is used to maintain counters per hour
-- If limit is exceeded:
-  - Job is NOT dropped
-  - Job is delayed into the next available hour
-- This logic is safe across multiple workers
+- Rate limiting is configured using environment variables:
+  - MAX_EMAILS_PER_HOUR
+  - MIN_DELAY_BETWEEN_EMAILS_MS
+- Redis is used to track per-hour email counters
+- If rate limit is exceeded:
+  - The job is not dropped
+  - The job is delayed to the next available window
+- Controlled concurrency ensures safe execution across workers
 
 ---
 
-## Persistence Guarantee
+## Persistence on Restart
 
-- Jobs are stored in Redis
+- BullMQ persists jobs in Redis
 - Email state is stored in PostgreSQL
-- On server restart:
-  - Scheduled jobs resume correctly
-  - Emails are not duplicated
-  - Already sent emails are not reprocessed
+- On backend or worker restart:
+  - Scheduled jobs resume automatically
+  - Sent emails are not duplicated
+  - Pending emails continue from last safe state
+
+No cron jobs are used. All scheduling and retries are handled entirely by BullMQ.
+
+---
+
+## AI Usage
+
+AI tools were used as a productivity aid to assist with debugging, refactoring, and documentation, similar to using documentation or IDE tooling.
+
+- Debugging BullMQ, Redis, and worker execution issues
+- Validating rate-limiting and delayed job behavior
+- Refactoring TypeScript code for readability and maintainability
+- Improving error handling and logging
+- Assisting with README structure and documentation clarity
 
 ---
 
 ## Environment Variables
 
-Backend `.env`:
+### Backend (.env)
 
 PORT=4000  
 DATABASE_URL=postgresql://...  
@@ -143,57 +147,39 @@ MIN_DELAY_BETWEEN_EMAILS_MS=2000
 
 ---
 
+## Ethereal Email Setup
+
+1. Visit https://ethereal.email
+2. Create a test account
+3. Copy SMTP credentials
+4. Add credentials to backend .env
+5. View sent emails in Ethereal dashboard
+
+---
+
 ## How to Run Locally
 
-### 1. Start services
-
+### Start Services
 docker start email-scheduler-postgres  
 docker start email-scheduler-redis  
 
-### 2. Backend
-
+### Backend
 cd Backend  
 npm install  
 npm run dev  
 
-### 3. Worker
-
+### Worker
 npm run worker  
 
-### 4. Frontend
-
+### Frontend
 cd frontend  
 npm install  
 npm run dev  
 
 ---
 
-## Trade-offs & Notes
-
-- CSV parsing is client-side for simplicity
-- Ethereal SMTP is used for safe testing
-- No cron jobs used (BullMQ only)
-- UI focuses on clarity over heavy animations
-
----
-
 ## Outcome
 
-This project represents a realistic slice of a production email system, demonstrating:
-- Background job processing
-- Rate limiting
-- Fault tolerance
-- Clean backend/frontend separation
+This project demonstrates practical experience in building a scalable email scheduling system with background processing, rate limiting, persistence, and clean backend/frontend separation.
 
-## AI Usage(ChatGpt)
-
-AI tools were used as a productivity aid during development to speed up debugging, refactoring, and documentation, while core system design and implementation were handled independently.
-
-## Practical use of AI during development
-- Debugging queue processing, Redis state, and worker execution issue
-- Validating rate-limiting logic and delayed job behavior
-- Refactoring TypeScript code for readability and maintainability
-- Improving error handling and logging for production scenarios
-- Assisting with technical documentation and README structuring
-
-The project reflects hands-on experience in designing and building a scalable email scheduling 
+Status: Submission Ready
