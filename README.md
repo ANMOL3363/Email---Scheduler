@@ -182,4 +182,4 @@ npm run dev
 
 This project demonstrates practical experience in building a scalable email scheduling system with background processing, rate limiting, persistence, and clean backend/frontend separation.
 
-Status: Submission Ready
+Thank you! from Anmol
