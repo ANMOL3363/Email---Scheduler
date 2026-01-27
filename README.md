@@ -77,6 +77,24 @@ Email Worker → Ethereal SMTP
 
 ---
 
+## Screenshots
+
+### Login (Google OAuth)
+![Login](screenshots/login.png)
+
+### Dashboard
+![Dashboard](screenshots/dashboard.png)
+
+### Schedule Email
+![Schedule Email](screenshots/schedule-email.png)
+
+### Scheduled Emails
+![Scheduled Emails](screenshots/scheduled-list.png)
+
+### Sent Emails
+![Sent Emails](screenshots/sent-emails.png)
+
+
 ## Rate Limiting Logic
 
 - Configurable via environment variables:
