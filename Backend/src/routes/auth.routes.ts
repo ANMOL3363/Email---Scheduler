@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 
 const router = Router();
 
-// Step 1: Redirect to Google
 router.get(
   "/google",
   passport.authenticate("google", {
@@ -13,7 +12,6 @@ router.get(
   })
 );
 
-// Step 2: Google callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
