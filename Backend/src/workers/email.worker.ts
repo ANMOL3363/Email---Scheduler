@@ -77,7 +77,7 @@ export const emailWorker = new Worker(
       data: { status: "SENT" },
     });
 
-    console.log(`✅ Email sent to ${email.to}`);
+    console.log(`Email has sent to ${email.to}`);
   },
   {
     connection,
